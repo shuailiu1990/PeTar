@@ -1,34 +1,26 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
-    void setMetallicity(F64 * _zeta, S32 *_mode);
+    void setMetallicity(F64 * _zeta);
 
     bool askAllBlueOrNot(F64 * mt);
     bool askInUseOrNot();
     bool askInScopeOfApplication(F64 * mass);
-    void setLowerLimitOfMass(F64 * mass);
+    void setLowerLimitOfMass();
     F64 getLowerLimitOfMass();
     F64 getUpperLimitOfMass();
     F64 getMetallicity();
     F64 getWindMetallicity();
-    F64 getCriticalMassMassive();
     bool askBlueOrRed(F64 * aj,
 		      F64 * mass);
     bool askBlueOrRed2(F64 * lumpersun,
 		       F64 * radpersun);
-    bool askBlueOrRed3(F64 * lumpersun,
-		       F64 * radpersun,
-		       F64 * mt);
     bool askRadiativeOrNot(S32 * kw,
 			   F64 * aj,
 			   F64 * mass);
     bool askRadiativeOrNot2(S32 * kw,
 			    F64 * lumpersun,
 			    F64 * radpersun);
-    bool askRadiativeOrNot3(S32 * kw,
-			    F64 * lumpersun,
-			    F64 * radpersun,
-			    F64 * mt);
     F64 getCriticalMassRatio(S32 * kw,
 			     F64 * aj,
 			     F64 * mass,
@@ -37,14 +29,7 @@ extern "C" {
 			      F64 * lumpersun,
 			      F64 * radpersun,
 			      F64 * mass,
-			      F64 * massc,
-			      S32 * preventCe);
-    F64 getCriticalMassRatio3(S32 * kw,
-			      F64 * lumpersun,
-			      F64 * radpersun,
-			      F64 * mass,
-			      F64 * massc,
-			      S32 * preventCe);
+			      F64 * massc);
     bool askCommonEnvelopeOrNot(S32 * kw,
 				F64 * aj,
 				F64 * mass,
@@ -53,14 +38,6 @@ extern "C" {
 				F64 * radx,
 				F64 * radc);
     bool askCommonEnvelopeOrNot2(S32 * kw,
-				 F64 * lumpersun,
-				 F64 * radpersun,
-				 F64 * mass,
-				 F64 * q,
-				 F64 * qc,
-				 F64 * radx,
-				 F64 * radc);
-    bool askCommonEnvelopeOrNot3(S32 * kw,
 				 F64 * lumpersun,
 				 F64 * radpersun,
 				 F64 * mass,
@@ -104,9 +81,6 @@ extern "C" {
     F64 getHeCoreMassBAGBTime(F64 * mass);
     F64 getCOCoreMassEndTime(F64 * mass);
 
-    F64 getTMSMassFromHeCoreMassHeITime(F64 * mc);
-    F64 getTMSMassFromHeCoreMassBAGBTime(F64 * mc);
-
     F64 getLuminosityMSPhaseMassive(F64 * mass,
 				    F64 * tau);
     F64 getLuminosityMSPhaseIntermediate(F64 * mass,
@@ -130,9 +104,6 @@ extern "C" {
 			    F64 * k2e);
 
     F64 getConvectiveCoreRadiusOfBluePhase(F64 * mt);
-
-    void setMetallicityInZUsingInBSE(F64 * zbse);
-    F64 getMetallicityInZUsingInBSE();
 
 #if defined(__cplusplus)
 }

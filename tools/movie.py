@@ -193,10 +193,10 @@ class PlotXY:
             if name in ['x','y','z','vx','vy','vz']:
                 v_flag = (name[0]=='v')
                 if v_flag:
-                    x = data.data.vel[:,xyz_index[name[1]]]
+                    xy[i] = data.data.vel[:,xyz_index[name[1]]]
                     xycm[i] = data.header.vel_offset[xyz_index[name[1]]]
                 else:
-                    x = data.data.pos[:,xyz_index[name]]
+                    xy[i] = data.data.pos[:,xyz_index[name]]
                     xycm[i] = data.header.pos_offset[xyz_index[name]]
                 xyc = 0
                 if (read_core):
@@ -207,12 +207,10 @@ class PlotXY:
                 if (cm_is_core):
                     xycm[i] = xyc
                 if (core_correct):
-                    xy[i] = x + xycm[i] - xyc
+                    xy[i] += xycm[i] - xyc
                     xycm[i] = xyc
                 elif (origin_mode):
-                    xy[i] = x + xycm[i]
-                else:
-                    xy[i] = x
+                    xy[i] += xycm[i]
                 if v_flag: 
                     cm_text[i] = r'$v_{%s,cm}=$' % name[1:]
                 else:
@@ -270,7 +268,7 @@ class PlotXY:
                     rxcm = data.header.pos_offset[0]
                     rycm = data.header.pos_offset[1]
                     rzcm = data.header.pos_offset[2]
-                xycm[i] = np.sqrt(rxcm*rxcm + rycm*rycm + rzcm*rzcm)
+                rxycm = np.sqrt(rxcm*rxcm + rycm*rycm + rzcm*rzcm)
                 rxc = 0
                 ryc = 0
                 rzc = 0
@@ -296,9 +294,9 @@ class PlotXY:
                 else:
                     xy[i] = np.sqrt(rx*rx + ry*ry + rz*rz)
                 if v_flag:
-                    cm_text[i] = r'$v_{cm}=$' 
+                    cm_text[i] = r'$v_{xy,cm}=$' 
                 else:
-                    cm_text[i] = r'$r_{cm}=$' 
+                    cm_text[i] = r'$r_{xy,cm}=$' 
             elif name == 'vr':
                 vx = data.data.vel[:,0]
                 vy = data.data.vel[:,1]
@@ -315,12 +313,6 @@ class PlotXY:
                 rxc = 0
                 ryc = 0
                 rzc = 0
-                vxc = 0
-                vyc = 0
-                vzc = 0
-                rcm = np.sqrt(rxcm*rxcm + rycm*rycm + rzcm*rzcm)                
-                drdvcm = rxcm*vxcm + rycm*vycm + rzcm*vzcm
-                xycm[i] = drdvcm/rcm
                 if (read_core):
                     vxc = data.core.vel[0,0]
                     vyc = data.core.vel[0,1]
@@ -339,32 +331,25 @@ class PlotXY:
                     drdvcm = rxcm*vxcm + rycm*vycm + rzcm*vzcm
                     xycm[i] = drdvcm/rcm
                 if (core_correct):
-                    rxf = rx + rxcm - rxc
-                    ryf = ry + rycm - ryc
-                    rzf = rz + rzcm - rzc
-                    vxf = vx + vxcm - vxc
-                    vyf = vy + vycm - vyc
-                    vzf = vz + vzcm - vzc
+                    rx += rxcm - rxc
+                    ry += rycm - ryc
+                    rz += rzcm - rzc
+                    vx += vxcm - vxc
+                    vy += vycm - vyc
+                    vz += vzcm - vzc
                     rcm = np.sqrt(rxc*rxc + ryc*ryc + rzc*rzc)                
                     drdvcm = rxc*vxc + ryc*vyc + rzc*vzc
                     xycm[i] = drdvcm/rcm
-                    r = np.sqrt(rxf*rxf + ryf*ryf + rzf*rzf)
-                    drdv = rxf*vxf + ryf*vyf + rzf*vzf
-                    xy[i] = drdv/r
                 elif (origin_mode):
-                    rxf = rx + rxcm
-                    ryf = ry + rycm
-                    rzf = rz + rzcm
-                    vxf = vx + vxcm
-                    vyf = vy + vycm
-                    vzf = vz + vzcm
-                    r = np.sqrt(rxf*rxf + ryf*ryf + rzf*rzf)
-                    drdv = rxf*vxf + ryf*vyf + rzf*vzf
-                    xy[i] = drdv/r
-                else:
-                    r = np.sqrt(rx*rx + ry*ry + rz*rz)
-                    drdv = rx*vx + ry*vy + rz*vz
-                    xy[i] = drdv/r
+                    rx += rxcm
+                    ry += rycm
+                    rz += rzcm
+                    vx += vxcm
+                    vy += vycm
+                    vz += vzcm
+                r = np.sqrt(rx*rx + ry*ry + rz*rz)
+                drdv = rx*vx + ry*vy + rz*vz
+                xy[i] = drdv/r
                 cm_text[i] = r'$v_{r}=$'
             elif name == 'ra':
                 xycm[i] = data.skycm.icrs.ra.value
@@ -533,7 +518,7 @@ class PlotLagr:
             self.ptcls.append(pt)
         for mi in range(len(mfrac)):
             mlabel=mfrac[mi]
-            pt, = axe.plot([],[], '*', markersize=8, markeredgewidth=0, markeredgecolor='none', label=mlabel)
+            pt, = axe.plot([],[], '*', markersize=8, markeredgecolor='none', label=mlabel)
             self.ptcls.append(pt)
         axe.set_yscale(self.rlagr_scale)
         axe.set_xlim(self.time_min, self.time_max)
@@ -611,25 +596,11 @@ class Data:
                 p2 = petar.Particle(interrupt_mode=self.interrupt_mode, external_mode=self.external_mode)
                 binary = petar.Binary(p1,p2, G=self.G)
                 if os.path.getsize(file_path+'.single')>0:
-                    if (self.snapshot_format=='ascii'):
-                        single.loadtxt(file_path+'.single')
-                    elif (self.snapshot_format=='binary'):
-                        single.fromfile(file_path+'.single')
-                    elif (self.snapshot_format=='npy'):
-                        single.load(file_path+'.single.npy')
-                    else:
-                        raise ValueError('Snapshot format %s unknown, should be ascii, binary or npy.' % self.snapshot_format)
+                    single.loadtxt(file_path+'.single')
                 single.calcEkin()
                 single.calcEtot()
                 if os.path.getsize(file_path+'.binary')>0:
-                    if (self.snapshot_format=='ascii'):
-                        binary.loadtxt(file_path+'.binary')
-                    elif (self.snapshot_format=='binary'):
-                        binary.fromfile(file_path+'.binary')
-                    elif (self.snapshot_format=='npy'):
-                        binary.load(file_path+'.binary.npy')
-                    else:
-                        raise ValueError('Snapshot format %s unknown, should be ascii, binary or npy.' % self.snapshot_format)
+                    binary.loadtxt(file_path+'.binary')
                 binary.calcEkin(True)
                 binary.calcPot()
                 binary.calcEtot(True)
@@ -902,133 +873,130 @@ if __name__ == '__main__':
     data = Data()
     
     def usage():
-        print("A tool for generating a movie for a simulation.")
-        print("Functionality")
-        print("  1) Supports plotting the evolution of positions, velocities, HR diagram, binary semi-major axis-eccentricity, and Lagrangian radii.")
-        print("  2) Different plots can be combined into subplots.")
-        print("  3) Multiple simulations can be combined into subplots if they output at the same time frequency.")
-        print("Usage: petar.movie [options] [snapshot path list filename]")
-        print("  snapshot path list file: depending on the mode, the snapshot filename has different syntaxes:")
-        print("    1) In single simulation mode, this file contains a list of snapshot paths, with each line representing one snapshot, which can be generated by petar.data.gather.")
-        print("    2) In multiple simulations mode (option -l), this file only contains the indices of snapshots without paths and prefixes. For example")
+        print("A tool to generate a movie for the evolution of positions, velocities, HR diagram, ")
+        print("binary semi-major axis-eccentricity and Lagrangian radii by reading the snapshots.")
+        print("Different plots can be combined together based on the provided options.")
+        print("Multiple simulations can also be compared if the numbers and times of snapshots are the same.")
+        print("Usage: petar.movie [options] data_list_filename")
+        print("data_list_filename: 1) In one model mode, this file contains a list of snapshot data pathes, each line for one snapshot. For example:")
+        print("                    ./data.0")
+        print("                    ./data.1")
+        print("                     ...")
+        print("        Or (generated by petar.data.gether):")
+        print("                    data.0")
+        print("                    data.1")
+        print("                    ...")
+        print("    2) In the comparison mode (-l), this file only contains the indices of snapshots without path and prefix. For example:")
         print("                    0")
         print("                    1")
         print("                    ...")
-        print("Options (default arguments shown in parentheses at the end)")
-        print("  -h(--help) Display help information.")
-        print("  -f [F]  Output frame FPS: ", fps)
-        print("  -m [S]  Add one panel for plotting the distribution of individual particles: ", pxy.plot_mode)
+        print("option: default values are shown at last")
+        print("  -h(--help): help")
+        print("  -f [F]: output frame FPS: ",fps)
+        print("  -m [S]: add one panel for ploting distribution of individual particles: ",pxy.plot_mode)
         print("          The data types of x- and y-axes are combined by '-'.")
-        print("          Supported data type names:")
-        print("              x, y, z: position x, y, and z.")
-        print("              vx, vy, vz: velocity v_x, v_y, and v_z.")
-        print("              rxy: projected distance at x-y plane, sqrt(x*x+y*y).")
-        print("              vxy: projected velocity at x-y plane, sqrt(vx*vx+vy*vy).")
-        print("              r: distance to the center, sqrt(x*x+y*y+z*z).")
-        print("              v: velocity value, sqrt(vx*vx+vy*vy+vz*vz).")
-        print("              vr: radial velocity referring to the center, (x*vx+y*vy+z*vz)/r.")
-        print("              ra: RA in the ICRS frame.")
-        print("              dec: Dec in the ICRS frame.")
-        print("              pmracosdec: proper motion of RA*cos(Dec) in the ICRS frame.")
-        print("              pmdec: proper motion of Dec in the ICRS frame.")
-        print("              lon: Longitude in the Galactocentric frame.")
-        print("              lat: Latitude in the Galactocentric frame.")
-        print("              pmlon: proper motion of Longitude in the Galactocentric frame.")
-        print("              pmlat: proper motion of Latitude in the Galactocentric frame.")
-        print("          For ra, dec, lon, lat, and proper motion, the snapshot data must use astronomical units (pc, pc/Myr).")
-        print("          The mode can be combined by ','. For example, '-m x-y,y-z' provides two plots: x-y and y-z.")
+        print("          For exmaple, -m x-y and -m vx-vy plot particle positions x vs. y and velocities v_x vs. v_y, respectively")
+        print("          The support data type names: ")
+        print("              x, y, z: position x, y and z")
+        print("              vx, vy, vz: velocity v_x, v_y and v_z")
+        print("              rxy: projected distance at x-y plane, sqrt(x*x+y*y)")
+        print("              vxy: projected velocity at x-y plane, sqrt(vx*vx+vy*vy)")
+        print("              r: distance to the center, sqrt(x*x+y*y+z*z)")
+        print("              v: velocity value, sqrt(vx*vx+vy*vy+vz*vz)")
+        print("              vr: radial velocity referring to the center, (x*vx+y*vy+z*vz)/r")
+        print("              ra: RA in the ICRS frame")
+        print("              dec: Dec in the ICRS frame")
+        print("              pmracosdec: proper motion of RA*cos(Dec) in the ICRS frame")
+        print("              pmdec: proper motion of Dec in the ICRS frame")
+        print("              lon: Longtitude in the Galactocentric frame")
+        print("              lat: Latitude in the Galactocentric frame")
+        print("              pmlon: proper motion of Longtitude in the Galactocentric frame")
+        print("              pmlat: proper motion of Latitude in the Galactocentric frame")
+        print("          For ra, dec, lon, lat and proper motion, the snapshot data must use the astronomical units (pc, pc/Myr)")
+        print("          The mode can be combined by ','. For exmaple, '-m x-y,y-z' provide two plots: x-y and y-z")
         print("          In this case, -R or --x-min/max, --y-min/max should also set the range for each plot,")
-        print("          such as -R 10,10, --x-min -10,-10.")
-        print("  -R [F]  x- and y-axis length of -m; suppressed when --x-min/max, --y-min/max are used: ", pxy.boxsize)
-        print("  -H      Add one panel of HR diagram.")
-        print("  -b      Add one panel of semi-ecc diagram for binaries.")
-        print("          Colors indicate the distance of binaries to the center, normalized by --r-max.")
-        print("          Sizes indicate the mass based on scaling options --markser-scale and --mass-power.")
-        print("  -L [S]  Add one panel of Lagrangian radii evolution, argument is the filename of Lagrangian data", lagr_file)
-        print("          Here the filename is not used in the comparison mode.")
-        print("  -G [F]  Gravitational constant for calculating binary orbit: ", data.G)
-        print("  -o [S]  Output movie filename: ", output_file)
-        print("  -p      Use previously generated PNG images to speed up the movie generation.")
-        print("  -s [S]  Snapshot format: ascii, binary, or npy: ", data.snapshot_format)
-        print("              ascii: All snapshots are in ascii format.")
-        print("              binary: All snapshots are in binary format.")
-        print("              npy: Snapshots from petar (data.*) are in binary format;")
-        print("                   Snapshots from petar.data.process (data.*.[single/binary]) are in npy format.")
-        print("  -l [S]  The filename of a list of paths to different models, enabling the comparison mode.")
-        print("          Each line contains three values: directory path of the model, prefix of the snapshot filename, name of the model.")
-        print("          When reading data, the path and the prefix will be added in front of the filenames.")
-        print("          For example, path'./'; prefix'data'; reading file'./data.[0-9*'.")
-        print("          The number of snapshots should be the same for all models.")
-        print("  -i [S]  Interrupt mode used in petar: no, base, bse, mobse: ", data.interrupt_mode)
-        print("  -t [S]  External mode used in petar: no, galpy: ", data.external_mode)
-        print("  -c [S]  Color type for particles: loglum, logtemp, ekin, pot, etot, white: ", data.color_mode)
-        print("              loglum: log(luminosity).")
-        print("              logtemp: log(temperature).")
-        print("              ekin: kinetic energy.")
-        print("              pot: potential.")
-        print("              etot: total energy.")
-        print("              white: pure white color.")
-        print("  --compare-in-column      In comparison mode, models are compared in columns instead of rows.")
-        print("  --generate-binary   [I]  0: no binary, 1: detect binary by using KDtree (slow), 2: read single and binary data generated by petar.data.process: ", data.generate_binary)
-        print("  --n-cpu       [I]  Number of CPU processors to use: all CPU cores")
-        print("  --x-min       [F]  Minimum of the main plot x-axis range", pxy.x_min)
-        print("  --x-max       [F]  Maximum of the main plot x-axis range", pxy.x_max)
-        print("  --y-min       [F]  Minimum of the main plot y-axis range", pxy.y_min)
-        print("  --y-max       [F]  Maximum of the main plot y-axis range", pxy.y_max)
-        print("  --lum-min     [F]  Minimum luminosity: ", phr.lum_min)
-        print("  --lum-max     [F]  Maximum luminosity: ", phr.lum_max)
-        print("  --temp-min    [F]  Minimum temperature: ", phr.temp_min)
-        print("  --temp-max    [F]  Maximum temperature: ", phr.temp_max)
-        print("  --semi-min    [F]  Minimum semi-major axis: ", pse.semi_min)
-        print("  --semi-max    [F]  Maximum semi-major axis: ", pse.semi_max)
-        print("  --ecc-min     [F]  Minimum eccentricity: ", pse.ecc_min)
-        print("  --ecc-max     [F]  Maximum eccentricity: ", pse.ecc_max)
-        print("  --time-min    [F]  Minimum time in evolution plot (x-axis): auto-determined from Lagrangian data")
-        print("  --time-max    [F]  Maximum time in evolution plot (x-axis): auto-determined from Lagrangian data")
-        print("  --ekin-min    [F]  Minimum kinetic energy: ", data.ekin_min)
-        print("  --ekin-max    [F]  Maximum kinetic energy: ", data.ekin_max)
-        print("  --pot-min     [F]  Minimum potential: ", data.pot_min)
-        print("  --pot-max     [F]  Maximum potential: ", data.pot_max)
-        print("  --etot-min    [F]  Minimum total energy: ", data.etot_min)
-        print("  --etot-max    [F]  Maximum total energy: ", data.etot_max)
-        print("  --r-max       [F]  Maximum distance for color scaling in semi-ecc plot", pse.r_max)
-        print("  --rlagr-min   [F]  Minimum radius in Lagrangian plot: ", plagr.rlagr_min)
-        print("  --rlagr-max   [F]  Maximum radius in Lagrangian plot: ", plagr.rlagr_max)
-        print("  --rlagr-scale [S]  Scaling of Lagrangian radii in the plot (y-axis): ", plagr.rlagr_scale)
-        print("  --lagr-energy      Option calc_energy for reading Lagrangian data")
-        print("  --lagr-type   [S]  Option add_star_type for reading Lagrangian data")
-        print("  --lagr-mfrac  [S]  Option for mass fraction for reading Lagrangian data")
-        print("  --unit-length [S]  Set label of length unit for x, y, z, and semi: no print")
-        print("  --unit-vel    [S]  Set label of velocity unit: no print")
-        print("  --format-time [S]  Set print format of time: ", format_time)
-        print("  --skiprows    [I]  Number of rows to skip when reading snapshot: Unset")
-        print("  --plot-ncols  [I]  Column number of panels: same as panels")
-        print("  --plot-xsize  [F]  X size of panel: ", frame_xsize)
-        print("  --plot-ysize  [F]  Y size of panel: ", frame_ysize)
-        print("  --cm-mode     [S]  Plot origin position determination: ", data.cm_mode)
-        print("                       Density: density center;")
-        print("                       Average: average of x, y;")
-        print("                       Core: use core data file generated from petar.data.process;")
-        print("                       None: use origin of snapshots.")
-        print("  --core-file   [S]  Core data file name, not used in the comparison mode: ", core_file)
-        print("  --cm-boxsize  [F]  Boxsize to search the coordinate center for the x-y plot: 5.0 times plotting size (-R)")
-        print("  --n-layer-cross [I] Number of layers of crosses for particles in the x-y plot: 5")
-        print("  --n-layer-point [I] Number of layers of points for particles in the x-y plot: 10")
-        print("  --layer-alpha   [F] Transparency factor of layers in the x-y plot: 2.5")
-        print("  --marker-scale  [F] Amplify the size of markers in x-y plot: 1.0")
-        print("  --mass-power    [F] The power index of mass to obtain sizes of markers: 1.0")
-        print("  --suppress-images   Do not plot snapshot images (PNG files) and use matplotlib.animation instead of imageio; this cannot use multiprocessing, much slower")
-        print("  --format-file   [S] Video format, requires imageio installed; for some formats (e.g., AVI, MP4) may require FFmpeg and imageio-FFmpeg installed: ", plot_format)
-        print("  --dpi           [F] DPI of image: ", dpi)
-        print("Important notes")
-        print("  1) Ensure correct options are set for '-i', '-t', and '-G' to read snapshots accurately and calculate Kepler orbital parameters correctly.")
-        print("     When using the compiled SSE/BSE stellar evolution package, use '-i bse'. Note that even if SSE/BSE is compiled but switched off during petar usage, '-i bse' is still required.")
-        print("     Similarly, when the Galpy external potential support is compiled, use '-i galpy' regardless of whether external potential is set in petar options during simulation.")
-        print("     Make sure to set the correct value for '-G' based on the units used during petar usage.")
-        print("  2) Each panel of plots can be added multiple times (the order is recorded)")
+        print("          such as -R 10,10, --x-min -10,-10")
+        print("  -R [F]: x- and y-axis length of -m; suppressed when --x-min/max, --y-min/max are used: ",pxy.boxsize)
+        print("  -H    : add one panel of HR-diagram")
+        print("  -b    : add one panel of semi-ecc diagram for binaries")
+        print("          colors indicate the distance of binaries to the center, normalized by --r-max")
+        print("          sizes indicate the mass based on scaling option --markser-scale and --mass-power")
+        print("  -L [S]: add one panel of Lagrangian radii evolution, argument is filename of lagrangian data", lagr_file)
+        print("          Here the filename is not used in the comparison mode")
+        print("  -G [F]: gravitational constant for calculating binary orbit: ",data.G)
+        print("  -o [S]: output movie filename: ",output_file)
+        print("  -p    : Use previous generated png images to speed up the movie generation")
+        print("  -s [S]: snapshot format: binary or ascii: ", data.snapshot_format)
+        print("  -l [S]: the filename of a list of pathes to different models, this will switch on the comparison mode.")
+        print("          Each line contains three values: directory path of model, prefix of filename of snapshots, name of model.")
+        print("          When data is reading, the path and the prefix will be added in front of the filenames. ")
+        print("          For example, path:'./' ; prefix:'data' ; reading file: './data.[0-9*]'.")
+        print("          The number of snapshots should also be the same for all models.")
+        print("  -i  [S]: interrupt mode used in petar: no, base, bse, mobse: ",data.interrupt_mode)
+        print("  -t  [S]: external mode used in petar: no, galpy: ",data.external_mode)
+        print("  -c  [S]: color type for particles: loglum, logtemp, ekin, pot, etot, white: ",data.color_mode)
+        print("              loglum: log(luminosity)")
+        print("              logtemp: log(temperature)")
+        print("              ekin: kinetic energy")
+        print("              pot: potential")
+        print("              etot: total energy")
+        print("              white: pure white color")
+        print("  --compare-in-column: in comparison mode, models are compared in columns instead of rows.")
+        print("  --generate-binary [I]: 0: no binary, 1: detect binary by using KDtree (slow), 2: read single and binary data generated by petar.data.process: ", data.generate_binary)
+        print("  --n-cpu       [I]: number of CPU processors to use: all CPU cores")
+        print("  --x-min       [F]: minimum of the main plot x-axis range",pxy.x_min)
+        print("  --x-max       [F]: maximum of the main plot x-axis range",pxy.x_max)
+        print("  --y-min       [F]: minimum of the main plot y-axis range",pxy.y_min)
+        print("  --y-max       [F]: maximum of the main plot y-axis range",pxy.y_max)
+        print("  --lum-min     [F]: minimum lumonisity: ",phr.lum_min)
+        print("  --lum-max     [F]: maximum lumonisity: ",phr.lum_max)
+        print("  --temp-min    [F]: minimum temperature: ",phr.temp_min)
+        print("  --temp-max    [F]: maximum temperature: ",phr.temp_max)
+        print("  --semi-min    [F]: minimum semi-major axis: ",pse.semi_min)
+        print("  --semi-max    [F]: minimum semi-major axis: ",pse.semi_max)
+        print("  --ecc-min     [F]: minimum eccentricity: ",pse.ecc_min)
+        print("  --ecc-max     [F]: maximum eccentricity: ",pse.ecc_max)
+        print("  --time-min    [F]: minimum time in evolution plot (x-axis): auto determine from Lagrangian data")
+        print("  --time-max    [F]: maximum time in evolution plot (x-axis)): auto determine from Lagrangian data")
+        print("  --ekin-min    [F]: minimum kinetic energy: ",data.ekin_min)
+        print("  --ekin-max    [F]: maximum kinetic energy: ",data.ekin_max)
+        print("  --pot-min     [F]: minimum potential: ",data.pot_min)
+        print("  --pot-max     [F]: maximum potential: ",data.pot_max)
+        print("  --etot-min    [F]: minimum total energy: ",data.etot_min)
+        print("  --etot-max    [F]: maximum total energy: ",data.etot_max)
+        print("  --r-max       [F]: maximum distance for color scaling in semi-ecc plot",pse.r_max)
+        print("  --rlagr-min   [F]: minimum radius in Lagrangian plot: ", plagr.rlagr_min)
+        print("  --rlagr-max   [F]: maximum radius in Lagrangian plot: ", plagr.rlagr_max)
+        print("  --rlagr-scale [S]: scaling of Lagrangian radii in the plot (y-axis): ",plagr.rlagr_scale)
+        print("  --lagr-energy    : option calc_energy for reading lagr data")
+        print("  --lagr-type   [S]: option add_star_type for reading lagr data")
+        print("  --lagr-mfrac  [S]: option for mass fraction for reading lagr data")
+        print("  --unit-length [S]: set label of length unit for x, y, z and semi: no print")
+        print("  --unit-vel    [S]: set label of velocity unit: no print")
+        print("  --format-time [S]: set print format of time: ",format_time)
+        print("  --skiprows    [I]: number of rows to escape when read snapshot: Unset")
+        print("  --plot-ncols  [I]: column number of panels: same as panels")
+        print("  --plot-xsize  [F]: x size of panel: ",frame_xsize)
+        print("  --plot-ysize  [F]: y size of panel: ",frame_ysize)
+        print("  --cm-mode     [S]: plot origin position determination: ",data.cm_mode)
+        print("                       density: density center;")
+        print("                       average: average of x,y;")
+        print("                       core: use core data file generated from petar.data.process;")
+        print("                       none: use origin of snapshots.")
+        print("  --core-file   [S]: core data file name, not used in the comparison mode: ",core_file)
+        print("  --cm-boxsize  [F]: boxsize to search the coordinate center for the x-y plot: 5.0 times ploting size (-R)")
+        print("  --n-layer-cross [I]: number of layers of crosses for particles in the x-y plot: 5")
+        print("  --n-layer-point [I]: number of layers of points for particles in the x-y plot: 10")
+        print("  --layer-alpha   [F]: transparency factor of layers in the x-y plot: 2.5")
+        print("  --marker-scale  [F]: amplify the size of markers in x-y plot: 1.0")
+        print("  --mass-power    [F]: the power index of mass to obtain sizes of markers: 1.0")
+        print("  --suppress-images: do not plot snapshot images (png files) and use matplotlib.animation instead of imageio, this cannot use multi-processing, much slower")
+        print("  --format        [S]: video format, require imageio installed, for some formats (e.g. avi, mp4) may require ffmpeg and imageio-ffmpeg installed: ", plot_format)
+        print("  --dpi           [F]: dpi of image: ", dpi)
+        print("PS:: Each panel of plots can be added mutliple times (the order is recored)")
 
     try:
-        shortargs = 'm:s:f:R:z:o:c:G:l:L:i:t:psHbh'
+        shortargs = 'm:s:f:R:z:o:c:G:l:L:i:t:p:sHbh'
         longargs = ['help','n-cpu=','lum-min=','lum-max=','temp-min=','temp-max=',
                     'semi-min=','semi-max=','ecc-min=','ecc-max=',
                     'ekin-min=','ekin-max=','pot-min=','pot-max=','etot-min=','etot-max=',
@@ -1038,7 +1006,7 @@ if __name__ == '__main__':
                     'unit-length=','unit-vel=','format-time=',
                     'skiprows=','generate-binary=',
                     'plot-ncols=','plot-xsize=','plot-ysize=',
-                    'suppress-images','format-file=','cm-mode=','core-file=',
+                    'suppress-images','format=','cm-mode=','core-file=',
                     'n-layer-cross=','n-layer-point=','layer-alpha=','marker-scale=','mass-power=',
                     'cm-boxsize=','compare-in-column','dpi=']
         opts,remainder= getopt.getopt( sys.argv[1:], shortargs, longargs)
@@ -1190,7 +1158,7 @@ if __name__ == '__main__':
                 kwargs['mass_power'] = float(arg)
             elif opt in ('--suppress-images'):
                 plot_images = False
-            elif opt in ('--format-file'):
+            elif opt in ('--format'):
                 plot_format = arg
             elif opt in ('--dpi'):
                 dpi = float(arg)
@@ -1247,7 +1215,7 @@ if __name__ == '__main__':
         if (read_lagr_data):
             lagr[0].loadtxt(lagr_file)
 
-    if (len(plot_item)==0): plot_item=[['main','x-y']]
+    if (len(plot_item)==0): plot_item=['x-y']
 
     if (plot_images):
         if (n_cpu==int(0)):

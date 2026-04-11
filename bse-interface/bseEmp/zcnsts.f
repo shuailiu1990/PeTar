@@ -1,5 +1,5 @@
 ***
-      SUBROUTINE zcnsts(z,zpars,trackmode)
+      SUBROUTINE zcnsts(z,zpars)
 * Tanikawa's prescription
       use iso_c_binding
 *
@@ -8,7 +8,6 @@
       integer kw
 *
       real*8 z,zpars(20)
-      integer trackmode
       real*8 tm,tn,tscls(20),lums(10),GB(10)
       real*8 lzs,dlzs,lz,lzd,dum1,m1,m2,rr,rb,mhefl,lhefl,thefl,lx
       real*8 tbgbf,thef,lbagbf,lheif,lhef,lzahbf
@@ -49,7 +48,7 @@
 * Tanikawa's prescription
       if(z .lt. 0.0001) then
          zeta = nint(log10(z/0.02))
-         call setMetallicity(zeta,trackmode)
+         call setMetallicity(zeta)
 !         z = 0.0001
          z = 0.0001220703125
       endif
@@ -61,7 +60,7 @@
          else
             zeta = log10(z/0.02)
          endif
-         call setMetallicity(zeta,trackmode)
+         call setMetallicity(zeta)
       endif
 * Tanikawa added 10.06.22 TO
 *

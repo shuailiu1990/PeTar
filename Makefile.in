@@ -43,7 +43,6 @@ MT_FLAGS += -D ADJUST_GROUP_PRINT
 #MT_FLAGS += -D DYNAMIC_MERGER_LESS_OUTPUT
 #MT_FLAGS += -D ONLY_SOFT
 #MT_FLAGS += -D INTEGRATED_CUTOFF_FUNCTION
-MT_FLAGS += -D SMOOTH_CM_USING_RECORES
 
 ifeq ($(tt_mode),3rd)
 MT_FLAGS += -D TIDAL_TENSOR_3RD
@@ -69,9 +68,8 @@ MT_FLAGS += -D BSEEMP -D BSE_BASE
 BSE_FLAG=on
 endif
 ifeq ($(BSE_FLAG),on)
-FCLIBS = @FCLIBS@
 BSELIBFILES= bse-interface/libbse.a bse-interface/bse_interface.h
-BSELIBS = -L ./bse-interface -lbse $(FCLIBS)
+BSELIBS = -L ./bse-interface -lbse -lgfortran
 CXXLIBS += $(BSELIBS)
 LIBFILES+= $(BSELIBFILES)
 PETAR_INCLUDE += -I ./bse-interface
@@ -96,11 +94,6 @@ GALPY_VERSION=@GALPY_VERSION@
 VERSION_MAX=$(shell printf '%s\n%s\n' "$(GALPY_VERSION)" "1.7.1" | sort --version-sort |tail -1)
 ifeq ($(VERSION_MAX), 1.7.1)
 GALPY_OPT= -D GALPY_VERSION_1_7_1
-else 
-VERSION_MAX=$(shell printf '%s\n%s\n' "$(GALPY_VERSION)" "1.7.9" | sort --version-sort |tail -1)
-ifeq ($(VERSION_MAX), 1.7.9)
-GALPY_OPT= -D GALPY_VERSION_1_7_9
-endif
 endif
 MT_FLAGS += -D GALPY $(GALPY_OPT)
 GALPYLIBS = -L ./galpy-interface -lgalpy @GSL_LIBS@
@@ -266,8 +259,10 @@ build/petar.io.test: io_test.cxx |build
 build/force_gpu_cuda.o: force_gpu_cuda.cu |build
 	$(NVCC) $(CUDA_INCLUDE) -c $< -o $@ 
 
-install_script_tool:
+install: $(TARGET) SE_INSTALL EXT_INSTALL
 	install -d @prefix@/bin/
+	install -m 755 $(TARGET) @prefix@/bin/
+	ln -sf @prefix@/bin/@PROG_NAME@ @prefix@/bin/petar
 	install -m 755 tools/initdata.sh @prefix@/bin/petar.init
 	install -m 755 tools/find_dt.sh @prefix@/bin/petar.find.dt
 	install -m 755 tools/update_par.sh @prefix@/bin/petar.update.par
@@ -276,15 +271,9 @@ install_script_tool:
 	install -m 755 tools/movie.py @prefix@/bin/petar.movie
 	install -m 755 tools/data_gether.sh @prefix@/bin/petar.data.gether
 	install -m 755 tools/get_object_snapshot.py @prefix@/bin/petar.get.object.snap
-	install -m 755 tools/format_transfer.py @prefix@/bin/petar.format.transfer.post
 	install -d @prefix@/include/
 	install -d @prefix@/include/petar
 	install -m 644 tools/analysis/*.py @prefix@/include/petar/
-
-install: $(TARGET) SE_INSTALL EXT_INSTALL install_script_tool
-	install -d @prefix@/bin/
-	install -m 755 $(TARGET) @prefix@/bin/
-	ln -sf @prefix@/bin/@PROG_NAME@ @prefix@/bin/petar
 
 clean: SE_CLEAN EXT_CLEAN
 	rm -f $(TARGET) build/*.o 

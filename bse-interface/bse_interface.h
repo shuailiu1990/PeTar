@@ -115,11 +115,7 @@ extern "C" {
     // The Fortran function name + '_' is the C version. All arguments should be in pointer type.
 
     //! function for initial metallicity parameters
-#ifdef BSEEMP
-    void zcnsts_(double* z, double* zpars, int* trackmode);
-#else
     void zcnsts_(double* z, double* zpars);
-#endif
 
     //!function for collison matrix
     void instar_();
@@ -492,10 +488,7 @@ static double EstimateGRTimescale(StarParameter& _star1, StarParameter& _star2, 
  */
 class BinaryEvent{
 public:
-    // Tanikawa's BH model
     double record[20][9];
-    //double record[20][81];
-    //
 
     //! set up the initial parameter of binary event based on the present status of a binary
     void recordEvent(const StarParameter& _p1, const StarParameter& _p2, const double _semi, const double _ecc, const int _type, const int _index) {
@@ -653,9 +646,6 @@ public:
     IOParams<double> pts1;
     IOParams<double> pts2;
     IOParams<double> pts3;
-#ifdef BSEEMP
-    IOParams<long long int> trackmode;
-#endif
     IOParams<long long int> idum;
     IOParams<double> tscale;
     IOParams<double> rscale;
@@ -692,19 +682,12 @@ public:
                    pts1  (input_par_store, 0.05,  "bse-pts1",   "time step of MS"),
                    pts2  (input_par_store, 0.01,  "bse-pts2",   "time step of GB, CHeB, AGB, HeGB"),
                    pts3  (input_par_store, 0.02,  "bse-pts3",   "time step of HG, HeMS"),
-#ifdef BSEEMP
-                   trackmode(input_par_store, 2,  "bse-trackmode",  "star evolution option, need to make a soft link to the data directory in bse-interface/bseEmp/emptrack/: 1: L model (larger overshoot; directory name: ffbonn); 2: M model (smaller overshoot; directory name: ffgeneva); See details in Appendix A of Tanikawa et al. (2022, ApJ, 926, 83)"),
-#endif
                    idum  (input_par_store, 1234,  "bse-idum",   "random number seed used by the kick routine"),
                    tscale(input_par_store, 1.0,   "bse-tscale", "Time scale factor from input data unit (IN) to Myr (time[Myr]=time[IN]*tscale)"),
                    rscale(input_par_store, 1.0,   "bse-rscale", "Radius scale factor from input data unit (IN) to Rsun (r[Rsun]=r[IN]*rscale)"),
                    mscale(input_par_store, 1.0,   "bse-mscale", "Mass scale factor from input data unit (IN) to Msun (m[Msun]=m[IN]*mscale)"),
                    vscale(input_par_store, 1.0,   "bse-vscale", "Velocity scale factor from input data unit(IN) to km/s (v[km/s]=v[IN]*vscale)"),
-#ifdef BSEEMP
-                   z     (input_par_store, 0.001, "bse-metallicity", "Metallicity Z, ranging from 0 to 0.03; when Z<0.0001, using EMP track, please make a symbolic link in the simulation directory to the track directory according to the --bse-trackmode option"),
-#else
                    z     (input_par_store, 0.001, "bse-metallicity", "Metallicity Z, ranging from 0.0001 to 0.03"),
-#endif
                    print_flag(false) {}
 #elif MOBSE
     IOParamsBSE(): input_par_store(),
@@ -788,9 +771,6 @@ public:
             {pts1.key,   required_argument, &sse_flag, 14},
             {pts2.key,   required_argument, &sse_flag, 15},       
             {pts3.key,   required_argument, &sse_flag, 16},
-#ifdef BSEEMP
-            {trackmode.key,   required_argument, &sse_flag, 30},
-#endif
             {idum.key,   required_argument, &sse_flag, 17}, 
             {tscale.key, required_argument, &sse_flag, 18},
             {rscale.key, required_argument, &sse_flag, 19},
@@ -975,13 +955,6 @@ public:
                     if(print_flag) gamma.print(std::cout);
                     opt_used+=2;
                     break;
-#ifdef BSEEMP
-                case 30:
-                    trackmode.value = atoi(optarg);
-                    if(print_flag) trackmode.print(std::cout);
-                    opt_used+=2;
-                    break;
-#endif
                 default:
                     break;
                 }
@@ -1053,9 +1026,6 @@ public:
 class BSEManager{
 public:
     double z, zpars[20]; ///> metallicity parameters
-#ifdef BSEEMP
-    int trackmode; ///> EMP track mode
-#endif
     double tscale; ///> time scaling factor from NB to Myr (t[Myr]=t[NB]*tscale)
     double rscale; ///> radius scaling factor from NB to Rsun
     double mscale; ///> mass scaling factor from NB to Msun
@@ -1064,11 +1034,7 @@ public:
     const char* single_type[16]; ///> name of single type from SSE
     const char* binary_type[14]; ///> name of binary type return from BSE evolv2, notice if it is -1, it indicate the end of record
 
-    BSEManager(): z(0.0), zpars{0}, 
-#ifdef BSEEMP
-                  trackmode(0),
-#endif
-                  tscale(0.0), rscale(0.0), mscale(0.0), vscale(0.0), year_to_day(3.6525e8),
+    BSEManager(): z(0.0), zpars{0}, tscale(0.0), rscale(0.0), mscale(0.0), vscale(0.0), year_to_day(3.6525e8),
                   single_type{"LMS", "MS", "HG", "GB", "CHeB", "FAGB", "SAGB", "HeMS", "HeHG", "HeGB", "HeWD", "COWD", "ONWD", "NS", "BH", "SN"},
                   binary_type{"Unset",               //0
                               "Initial",             //1
@@ -1089,9 +1055,6 @@ public:
 
     bool checkParams() {
         assert(z>0.0);
-#ifdef BSEEMP
-        assert(trackmode>0);
-#endif
         assert(tscale>0.0);
         assert(rscale>0.0);
         assert(mscale>0.0);
@@ -1215,11 +1178,7 @@ public:
     //}
 
     bool isMerger(const int _binary_type) {
-        return (_binary_type>=10&&_binary_type<12);
-    }
-
-    bool isNoRemnant(const int _binary_type) {
-        return (_binary_type==12);
+        return (_binary_type>=10&&_binary_type<=12);
     }
 
     bool isDisrupt(const int _binary_type) {
@@ -1284,13 +1243,11 @@ public:
 #ifdef BSEEMP
         if (_print_flag&&(z>0.03))
             std::cerr<<"BSE warning! metallicity Z is not in (0.0, 0.03); given value:"<<z<<std::endl;
-        trackmode = _input.trackmode.value;
-        zcnsts_(&z, zpars, &trackmode);
 #else
         if (_print_flag&&(z<0.0001||z>0.03))
             std::cerr<<"BSE warning! metallicity Z is not in (0.0001, 0.03); given value:"<<z<<std::endl;
-        zcnsts_(&z, zpars);
 #endif
+        zcnsts_(&z, zpars);
         value3_.idum = (_input.idum.value>0)? -_input.idum.value: _input.idum.value;
 
 #ifdef PARTICLE_SIMULATOR_MPI_PARALLEL
@@ -1306,9 +1263,6 @@ public:
             std::cout<<"z: "<<z<<" zpars: ";
             for (int i=0;i<20;i++) std::cout<<zpars[i]<<" ";
             std::cout<<std::endl;
-#ifdef BSEEMP
-            std::cout<<"EMPTrack: "<<trackmode<<std::endl;
-#endif
         }
 
     }

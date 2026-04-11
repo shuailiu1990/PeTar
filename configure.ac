@@ -200,11 +200,11 @@ AC_ARG_WITH([cuda-prefix],
             [],
 	    [cuda_prefix="/usr/local/cuda"])
 
-#AC_ARG_WITH([cuda-sdk-prefix], 
-#            [AS_HELP_STRING([--with-cuda-sdk-prefix],
-# 	                    [Prefix of your CUDA samples (SDK) installation])],
-#            [cuda_sdk_prefix=$withval],
-# 	    [cuda_sdk_prefix="/usr/local/cuda/samples"])
+AC_ARG_WITH([cuda-sdk-prefix], 
+            [AS_HELP_STRING([--with-cuda-sdk-prefix],
+	                    [Prefix of your CUDA samples (SDK) installation])],
+            [cuda_sdk_prefix=$withval],
+	    [cuda_sdk_prefix="/usr/local/cuda/samples"])
 
 AS_IF([test "x$use_cuda" != xno],
       [AC_CHECK_PROG([NVCC], [nvcc], [nvcc], [none])
@@ -221,13 +221,13 @@ AS_IF([test "x$use_cuda" != xno],
        CUDA_VERSION=`$NVCC --version|awk -F ',' 'END{print $(NF-1)}'|awk '{print $2}'`
        AC_MSG_RESULT([$CUDA_VERSION])
 
-#       AC_CHECK_FILE(["$cuda_prefix/samples/common/inc/helper_cuda.h"],
-#                     [CUDAFLAGS=$CUDAFLAGS" -I $cuda_prefix/samples/common/inc"],
-#                     [AC_CHECK_FILE(["$cuda_sdk_prefix/common/inc/helper_cuda.h"],
-#                                    [CUDAFLAGS=$CUDAFLAGS" -I $cuda_sdk_prefix/common/inc"],
-#                                    [AC_CHECK_FILE(["$cuda_sdk_prefix/Common/helper_cuda.h"],
-#                                                   [CUDAFLAGS=$CUDAFLAGS" -I $cuda_sdk_prefix/Common"],
-#                                                   [ AC_MSG_FAILURE([can't find CUDA sample inc file helper_cuda.h, please provide correct cuda SDK prefix by using --with-cuda-sdk-prefix])])])])
+       AC_CHECK_FILE(["$cuda_prefix/samples/common/inc/helper_cuda.h"],
+                     [CUDAFLAGS=$CUDAFLAGS" -I $cuda_prefix/samples/common/inc"],
+                     [AC_CHECK_FILE(["$cuda_sdk_prefix/common/inc/helper_cuda.h"],
+                                    [CUDAFLAGS=$CUDAFLAGS" -I $cuda_sdk_prefix/common/inc"],
+                                    [AC_CHECK_FILE(["$cuda_sdk_prefix/Common/helper_cuda.h"],
+                                                   [CUDAFLAGS=$CUDAFLAGS" -I $cuda_sdk_prefix/Common"],
+                                                   [ AC_MSG_FAILURE([can't find CUDA sample inc file helper_cuda.h, please provide correct cuda SDK prefix by using --with-cuda-sdk-prefix])])])])
 
        AC_CHECK_LIB([cudart],
                     [main], 
@@ -307,7 +307,7 @@ AC_CHECK_FILE(["$sdar_prefix/src/Hermite/hermite_integrator.h"],
 # GALPY
 AC_ARG_WITH([galpy-prefix],
             [AS_HELP_STRING([--with-galpy-prefix],
-	                    [Prefix of your Galpy installation. Default: search $HOME/.local, ../galpy, $VIRTUAL_ENV])],
+	                    [Prefix of your Galpy installation. Default: search $HOME/.local, ../galpy])],
             [galpy_prefix=$withval],
 	    [galpy_prefix="__search__"])
 
@@ -333,9 +333,7 @@ AC_ARG_WITH([interrupt],
 		    AS_IF([test x"$FC" == xflang],
 		          [#AX_CHECK_COMPILE_FLAG([-static-flang-libs],
                           #                       [FCFLAGS=$FCFLAGS" -static-flang-libs"])
-		          FCLIBS=$FCLIBS' -lflang -lpgmath'],[])
-		    AS_IF([test x"$FC" == x],
-                          [AC_MSG_FAILURE([can't find Fortran compiler, please install it. For example, in Ubuntu, to install GNU Fortran compiler, use 'sudo apt install gfortran'])],[])
+		          FCLIBS=$FCLIBS' -lflang'],[])
                     FCFLAGS=$FCFLAGS_BK
 		    AS_IF([test x"$with_debug" == xg],
                           [AX_CHECK_COMPILE_FLAG([-g],
@@ -376,27 +374,24 @@ AC_ARG_WITH([external],
                     AS_IF([test x"$galpy_prefix" == x__search__],
                           [AC_CHECK_PROG([FIND_CHECK], [find], [find])
 			   AS_IF([test x"$FIND_CHECK" == xfind],
-                                 [galpy_prefix=`find $HOME/.local $VIRTUAL_ENV -type d -name galpy|tail -1`
+                                 [galpy_prefix=`find $HOME/.local -type d -name galpy|tail -1`
                                   AS_IF([test x"$galpy_prefix" == x],
                                         [galpy_prefix=`pwd`'/'`find ../ -type d -name galpy|tail -1`])])])
                     AC_CHECK_FILE(["$galpy_prefix/potential/potential_c_ext/galpy_potentials.h"],
                                   [GALPY_PATH=$galpy_prefix],
                                   [AC_MSG_FAILURE([can't find Galpy library, please provide correct PREFIX by using --with-galpy-prefix])])
                     AC_CHECK_FILE(["$galpy_prefix/__init__.py"],
-                                  [GALPY_VERSION=`head -1 $galpy_prefix/__init__.py|cut -d'"' -f2 `
-                                   version_check=`echo -e "$GALPY_VERSION\n1.10.2" | sort -V | head -1`
-                                   AS_IF([test "$version_check" != "$GALPY_VERSION"],
-                                         [AC_MSG_FAILURE([Galpy version $GALPY_VERSION is not supported. Please use Galpy <= 1.10.2])])],
-                                  [AC_MSG_FAILURE([can't find Galpy __init__.py, which contains the version number])])
+		                  [GALPY_VERSION=`cut -d'"' -f2 $galpy_prefix/__init__.py`],
+				  [AC_MSG_FAILURE([can't find Galpy __init__.py, which contains the version number])])
                     AC_CHECK_PROG([GSL_CFLAGS],[gsl-config],[`gsl-config --cflags`],[])
                     AC_CHECK_PROG([GSL_LIBS],[gsl-config],[`gsl-config --libs`],[none])
 		    AS_IF([test x"$GSL_LIBS" == xnone],
                           [AC_CHECK_LIB([gslcblas],[main],
                                         [],
-                                        [AC_MSG_FAILURE([can't find GSL library, please install it first, e.g. in Ubuntu 20.04, use sudo apt install libgsl-dev])])
+                                        [AC_MSG_FAILURE([can't find GSL library, please install it first, e.g. in Ubuntu 20.04, use sudo apt-get install libgsl-dev])])
                            AC_CHECK_LIB([gsl],[main],
                                         [],
-                                        [AC_MSG_FAILURE([can't find GSL library, please install it first, e.g. in Ubuntu 20.04, use sudo apt install libgsl-dev])],[-lgslcblas])
+                                        [AC_MSG_FAILURE([can't find GSL library, please install it first, e.g. in Ubuntu 20.04, use sudo apt-get install libgsl-dev])],[-lgslcblas])
                            GSL_LIBS='-lgsl -lgslcblas'])])],
 	    [with_external=off])
             
@@ -418,10 +413,6 @@ AC_ARG_WITH([orbit],
 
 
 PROG_NAME=$PROG_NAME$PROG_SUFFIX
-
-# check whether name comflicts exist
-AS_IF([[test x"$PROG_NAME" == xpetar."$with_interrupt" ] || [test x"$PROG_NAME" == xpetar."$with_external"]],
-      [PROG_NAME=$PROG_NAME'.noparallel'])
 
 # others
 AC_PROG_LN_S

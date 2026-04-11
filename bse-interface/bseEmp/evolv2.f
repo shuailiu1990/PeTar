@@ -202,33 +202,14 @@
       REAL*8 mass1i,mass2i,tbi,ecci
 *     kick information 
       INTEGER ikick,jp,jpmax
-* Tanikawa's BH model
       PARAMETER(jpmax=8)
-!      PARAMETER(jpmax=80)
-*
 
       LOGICAL coel,com,prec,inttry,change,snova,sgl,bsymb,esymb,bss
       LOGICAL supedd,novae,disk
 *      LOGICAL isave,iplot
       REAL*8 rl,mlwind,vrotf,corerd
       EXTERNAL rl,mlwind,vrotf,corerd
-* Tanikawa's BH model
-      REAL*8 bpp(9,20)
-!      REAL*8 bpp(81,10)
-      integer preventCe
-      parameter(preventCe=0) ! 0:Oritinal CE criteria, 1:Olejek21-likes
-      logical newradornot
-      parameter(newradornot=.true.)
-      logical blueornot
-      logical newdyntide
-      parameter(newdyntide=.true.)
-      real*8 rconv
-      real*8 dyntide
-      logical nohgce
-      integer krol(2)
-      common /bseemp/ nohgce,krol
-      logical coreenvornot
-*
+      REAL*8 bpp(9,10)
 *      REAL bcm(50000,34),bpp(80,10)
 *      COMMON /BINARY/ bcm,bpp
 * Tanikawa's prescription
@@ -236,17 +217,8 @@
       REAL*8 pts1,pts2,pts3
       COMMON /POINTS/ pts1,pts2,pts3
 *
-* Tanikawa's DD model
-      logical ddmerger
-      parameter (ddmerger=.true.)
-      real*8 kw1dd,kw2dd,ms1dd
-      real*8 sigma,mxns
-      COMMON /VALUE4/ sigma,mxns
 *
 * Save the initial state.
-*
-* Tanikawa's BH model
-      nohgce = .true.
 *
       ecc_bk = -1
       mass1i = mass0(1)
@@ -507,16 +479,6 @@
                   bpp(jp,10) = 6.0
                   bsymb = .true.
                endif
-               bpp(jp,11) = lumin(1)
-               bpp(jp,12) = lumin(2)
-               bpp(jp,13) = rad(1)
-               bpp(jp,14) = rad(2)
-               bpp(jp,15) = massc(1)
-               bpp(jp,16) = massc(2)
-               bpp(jp,17) = radc(1)
-               bpp(jp,18) = radc(2)
-               bpp(jp,19) = ospin(1)
-               bpp(jp,20) = ospin(2)
             endif
          endif
 *
@@ -594,20 +556,11 @@
      &                  +ecc2*0.390625d0)))
 *
                if((kstar(k).eq.1.and.mass(k).ge.1.25d0).or.
-* Tanikawa's BH model (Change radiative/convective criteria)
-!     &            kstar(k).eq.4.or.kstar(k).eq.7)then
-     &              blueornot(newradornot,kstar(k),lumin(k),
-     &              rad(k),mass(k)).or.
-     &              kstar(k).eq.7)then
-*     
-*     
+     &            kstar(k).eq.4.or.kstar(k).eq.7)then
+*
 * Radiative damping (Zahn, 1977, A&A, 57, 383 and 1975, A&A, 41, 329).
 *
-* Tanikawa's BH model (Change dynamical tide to Kinugawa+2020)
-!                  tc = 1.592d-09*(mass(k)**2.84d0)
-                  tc = dyntide(newdyntide,kstar(k),mass0(k),mass(k),
-     &              rad(k))
-*
+                  tc = 1.592d-09*(mass(k)**2.84d0)
                   f = 1.9782d+04*SQRT((mass(k)*rad(k)*rad(k))/sep**5)*
      &                tc*(1.d0+q(3-k))**(5.d0/6.d0)
                   tcqr = f*q(3-k)*raa6
@@ -896,7 +849,7 @@
          dt = dtmi(k)
          CALL deltat(kw,age,tm,tn,tscls,dt,dtr)
 * Tanikawa's prescription
-         if(askInUseOrNot() .and. askInScopeOfApplication(m0)) then !         if(askInUseOrNot() .and. askInScopeOfApplication(mt)) then
+         if(askInUseOrNot() .and. askInScopeOfApplication(mt)) then
             call calcTimestepAGBPhase(kw,age,m0,tn,pts3,dt,dtr)
          endif
 *
@@ -936,16 +889,6 @@
 *            bpp(jp,10) = 14.0
             bpp(jp,10) = 11.0
 *            btype = 11
-            bpp(jp,11) = lumin(1)
-            bpp(jp,12) = lumin(2)
-            bpp(jp,13) = rad(1)
-            bpp(jp,14) = rad(2)
-            bpp(jp,15) = massc(1)
-            bpp(jp,16) = massc(2)
-            bpp(jp,17) = radc(1)
-            bpp(jp,18) = radc(2)
-            bpp(jp,19) = ospin(1)
-            bpp(jp,20) = ospin(2)
          endif
 *
  6    continue
@@ -987,16 +930,6 @@
          bpp(jp,9) = rad(2)/rol(2)
          bpp(jp,10) = 1.0
 *         btype = 1
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
          if(snova)then
             bpp(jp,10) = 2.0
 *            btype = 2
@@ -1178,16 +1111,6 @@
          bpp(jp,9) = rad(2)/rol(2)
          bpp(jp,10) = 2.0
 *         btype = 2
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
       endif
 *
       iter = iter + 1
@@ -1230,16 +1153,6 @@
          bpp(jp,8) = rad(1)/rol(1)
          bpp(jp,9) = rad(2)/rol(2)
          bpp(jp,10) = 3.0
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
       endif
 *      btype = 3
 *
@@ -1344,8 +1257,8 @@
 !         qc = 3.d0
 !      endif
       if(askInUseOrNot()) then
-         qc = getCriticalMassRatio3(kstar(j1),lumin(j1),rad(j1),
-     &        mass(j1),massc(j1),preventCe)
+         qc = getCriticalMassRatio2(kstar(j1),lumin(j1),rad(j1),
+     &        mass(j1),massc(j1))
       else
          if(kstar(j1).eq.2)then
             qc = 4.d0
@@ -1453,7 +1366,7 @@
 !     &        (kstar(j1).eq.2.and.q(j1).gt.qc).or.
 !     &        (kstar(j1).eq.4.and.q(j1).gt.qc))then
       elseif((askInUseOrNot()
-     &        .and.askCommonEnvelopeOrNot3(kstar(j1),
+     &        .and.askCommonEnvelopeOrNot2(kstar(j1),
      &        lumin(j1),rad(j1),mass0(j1),
      &        q(j1),qc,radx(j1),radc(j1)))
      &        .or.
@@ -1465,23 +1378,6 @@
 *
 *
 * Common-envelope evolution.
-*
-* Tanikawa's BH model (prevent HGCE)
-         if(nohgce)then
-            if((kstar(j1).eq.2).and.(q(j1).gt.qc)) then
-               m1ce = mass(j1)
-               m2ce = mass(j2)
-               krol(1) = kstar(j1)
-               krol(2) = kstar(j2)
-               CALL mix(mass0,mass,aj,kstar,zpars)
-               dm1 = m1ce - mass(j1)
-               dm2 = mass(j2) - m2ce
-               dtm = 0.d0
-               epoch(1) = tphys - aj(1)
-               coel = .true.
-               goto 135
-            endif
-         endif
 *
          m1ce = mass(j1)
          m2ce = mass(j2)
@@ -1505,38 +1401,6 @@
 *         bpp(jp,10) = 7.0
          bpp(jp,10) = 8.0
 *         btype = 8
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
-         if(kstar(1).eq.15) then
-            bpp(jp,2) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,8) = zero
-            bpp(jp,11) = zero
-            bpp(jp,13) = zero
-            bpp(jp,15) = zero
-            bpp(jp,17) = zero
-            bpp(jp,19) = zero
-         endif
-         if(kstar(2).eq.15) then
-            bpp(jp,3) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,9) = zero
-            bpp(jp,12) = zero
-            bpp(jp,14) = zero
-            bpp(jp,16) = zero
-            bpp(jp,18) = zero
-            bpp(jp,20) = zero
-         endif
 *
          epoch(j1) = tphys - aj(j1)
          if(coel)then
@@ -1569,19 +1433,12 @@
          oorb = twopi/tb
       elseif(kstar(j1).ge.10.and.kstar(j1).le.12.and.
      &       q(j1).gt.0.628d0)then
-* Tanikawa's DD model
-         kw1dd = kstar(j1)
-         kw2dd = kstar(j2)
-         ms1dd = mass(j1)
 *
 * Dynamic transfer from a white dwarf.  Secondary will have KW > 9.
 *
          taum = SQRT(tkh(j1)*tdyn)
          dm1 = mass(j1)
-* Tanikawa's DD model
-!         if(eddfac.lt.10.d0)then
-         if(eddfac.lt.10.d0 .and. .not.ddmerger)then
-*
+         if(eddfac.lt.10.d0)then
             dm2 = MIN(dme*taum/tb,dm1)
             if(dm2.lt.dm1) supedd = .true. 
          else
@@ -1621,30 +1478,10 @@
 *
 * Might be a supernova that destroys the system.
 *
-* Tanikawa's DD model
-!         if(kstar(j2).le.11.and.mass(j2).gt.mch)then
-         if(kstar(j2).le.11 .and. mass(j2).gt.mch
-     &        .and. .not.ddmerger)then
-*
+         if(kstar(j2).le.11.and.mass(j2).gt.mch)then
             kstar(j2) = 15
             mass(j2) = 0.d0
          endif
-* Tanikawa's DD model
-* CO(>0.8)-CO(>0.8) => Violent merger (Sato et al. 2015; 2016)
-* ONe-CO => Failed detonation and small ejecta (Kashyap et al. 2018)
-         if(ddmerger)then
-            if(kw1dd.eq.11.and.ms1dd.ge.0.8.and.kw2dd.eq.11)then
-               kstar(j2) = 15
-               mass(j2)  = 0.d0
-            elseif(kstar(j2).le.12 .and. mass(j2).gt.mch)then
-               if(mass(j2).le.mxns)then
-                  kstar(j2) = 13
-               else
-                  kstar(j2) = 14
-               endif
-            endif
-         endif
-*
          coel = .true.
          goto 135
       elseif(kstar(j1).eq.13)then
@@ -1711,10 +1548,6 @@
 *
             m1ce = mass(j1)
             m2ce = mass(j2)
-* Tanikawa's BH model (prevent HGCE)
-            krol(1) = kstar(j1)
-            krol(2) = kstar(j2)
-*
             CALL mix(mass0,mass,aj,kstar,zpars)
             dm1 = m1ce - mass(j1)
             dm2 = mass(j2) - m2ce
@@ -1822,16 +1655,6 @@
                      bpp(jp,4) = float(kst)
                      bpp(jp,5) = float(kstar(j1))
                   endif
-                  bpp(jp,11) = lumin(1)
-                  bpp(jp,12) = lumin(2)
-                  bpp(jp,13) = rad(1)
-                  bpp(jp,14) = rad(2)
-                  bpp(jp,15) = massc(1)
-                  bpp(jp,16) = massc(2)
-                  bpp(jp,17) = radc(1)
-                  bpp(jp,18) = radc(2)
-                  bpp(jp,19) = ospin(1)
-                  bpp(jp,20) = ospin(2)
 *
                endif
             endif            
@@ -1891,16 +1714,6 @@
                      bpp(jp,4) = float(kst)
                      bpp(jp,5) = float(kstar(j1))
                   endif
-                  bpp(jp,11) = lumin(1)
-                  bpp(jp,12) = lumin(2)
-                  bpp(jp,13) = rad(1)
-                  bpp(jp,14) = rad(2)
-                  bpp(jp,15) = massc(1)
-                  bpp(jp,16) = massc(2)
-                  bpp(jp,17) = radc(1)
-                  bpp(jp,18) = radc(2)
-                  bpp(jp,19) = ospin(1)
-                  bpp(jp,20) = ospin(2)
 *
                endif
 *
@@ -2098,18 +1911,8 @@
      &                  +ecc2*0.390625d0)))
 *
                if((kstar(k).eq.1.and.mass(k).ge.1.25d0).or.
-* Tanikawa's BH model (Change radiative/convective criteria)
-!     &            kstar(k).eq.4.or.kstar(k).eq.7)then
-     &              blueornot(newradornot,kstar(k),lumin(k),
-     &              rad(k),mass(k)).or.
-     &              (.not. newradornot .and. kstar(k).eq.4).or.
-     &              kstar(k).eq.7)then
-*
-* Tanikawa's BH model (Change dynamical tide to Kinugawa+2020)
-!                  tc = 1.592d-09*(mass(k)**2.84d0)
-                  tc = dyntide(newdyntide,kstar(k),mass0(k),mass(k),
-     &              rad(k))
-*
+     &            kstar(k).eq.4.or.kstar(k).eq.7)then
+                  tc = 1.592d-09*(mass(k)**2.84d0)
                   f = 1.9782d+04*SQRT((mass(k)*radx(k)*radx(k))/sep**5)*
      &                tc*(1.d0+q(3-k))**(5.d0/6.d0)
                   tcqr = f*q(3-k)*raa6
@@ -2311,7 +2114,7 @@
          if(kw.le.9)then
             CALL deltat(kw,age,tm,tn,tscls,dt,dtr)
 * Tanikawa's prescription
-            if(askInUseOrNot() .and. askInScopeOfApplication(m0)) then !            if(askInUseOrNot() .and. askInScopeOfApplication(mt)) then
+            if(askInUseOrNot() .and. askInScopeOfApplication(mt)) then
                call calcTimestepAGBPhase(kw,age,m0,tn,pts3,dt,dtr)
             endif
 *
@@ -2355,16 +2158,6 @@
 *            bpp(jp,10) = 14.0
             bpp(jp,10) = 11.0
 *            btype = 11
-            bpp(jp,11) = lumin(1)
-            bpp(jp,12) = lumin(2)
-            bpp(jp,13) = rad(1)
-            bpp(jp,14) = rad(2)
-            bpp(jp,15) = massc(1)
-            bpp(jp,16) = massc(2)
-            bpp(jp,17) = radc(1)
-            bpp(jp,18) = radc(2)
-            bpp(jp,19) = ospin(1)
-            bpp(jp,20) = ospin(2)
          endif
 *
  90   continue
@@ -2455,16 +2248,6 @@
          bpp(jp,9) = rad(2)/rol(2)
          bpp(jp,10) = 2.0
 *         btype = 2
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
       endif
 *
 * Test whether the primary still fills its Roche lobe.
@@ -2489,16 +2272,6 @@
          bpp(jp,9) = rad(2)/rol(2)
          bpp(jp,10) = 4.0
 *         btype = 4
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
          dtm = 0.d0
          goto 4
       endif
@@ -2528,49 +2301,29 @@
       bpp(jp,9) = rrl2
       bpp(jp,10) = 5.0
 *      btype = 5
-      bpp(jp,11) = lumin(1)
-      bpp(jp,12) = lumin(2)
-      bpp(jp,13) = rad(1)
-      bpp(jp,14) = rad(2)
-      bpp(jp,15) = massc(1)
-      bpp(jp,16) = massc(2)
-      bpp(jp,17) = radc(1)
-      bpp(jp,18) = radc(2)
-      bpp(jp,19) = ospin(1)
-      bpp(jp,20) = ospin(2)
 *
-* Tanikawa's BH model (prevent HGCE)
-!      if(kstar(j1).ge.2.and.kstar(j1).le.9.and.kstar(j1).ne.7)then
-      if(coreenvornot(nohgce,kstar(j1)))then
-*
+      if(kstar(j1).ge.2.and.kstar(j1).le.9.and.kstar(j1).ne.7)then
          CALL comenv(mass0(j1),mass(j1),massc(j1),aj(j1),jspin(j1),
      &               kstar(j1),mass0(j2),mass(j2),massc(j2),aj(j2),
      &               jspin(j2),kstar(j2),zpars,ecc,sep,jorb,
      &               vkick(4*(j1-1)+1),vkick(4*(j2-1)+1),coel)
          com = .true.
-* Tanikawa's BH model (prevent HGCE)
-!      elseif(kstar(j2).ge.2.and.kstar(j2).le.9.and.kstar(j2).ne.7)then
-      elseif(coreenvornot(nohgce,kstar(j2)))then
-*
+      elseif(kstar(j2).ge.2.and.kstar(j2).le.9.and.kstar(j2).ne.7)then
          CALL comenv(mass0(j2),mass(j2),massc(j2),aj(j2),jspin(j2),
      &               kstar(j2),mass0(j1),mass(j1),massc(j1),aj(j1),
      &               jspin(j1),kstar(j1),zpars,ecc,sep,jorb,
      &               vkick(4*(j2-1)+1),vkick(4*(j1-1)+1),coel)
          com = .true.
       else
-* Tanikawa's BH model (prevent HGCE)
-         krol(1) = kstar(j1)
-         krol(2) = kstar(j2)
-*
          CALL mix(mass0,mass,aj,kstar,zpars)
       endif
       if(com)then
          jp = MIN(jpmax,jp + 1)
          bpp(jp,1) = tphys
          bpp(jp,2) = mass(1)
-*         if(kstar(1).eq.15) bpp(jp,2) = zero
+         if(kstar(1).eq.15) bpp(jp,2) = zero
          bpp(jp,3) = mass(2)
-*         if(kstar(2).eq.15) bpp(jp,3) = zero
+         if(kstar(2).eq.15) bpp(jp,3) = zero
          bpp(jp,4) = float(kstar(1))
          bpp(jp,5) = float(kstar(2))
          bpp(jp,6) = sep
@@ -2579,41 +2332,8 @@
          rrl2 = MIN(rrl2,0.99d0)
          bpp(jp,8) = rrl1
          bpp(jp,9) = rrl2
-*         bpp(jp,10) = 7.0
-         bpp(jp,10) = 8.0
+         bpp(jp,10) = 7.0
 *         btype = 8
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
-         if(kstar(1).eq.15) then
-            bpp(jp,2) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,8) = zero
-            bpp(jp,11) = zero
-            bpp(jp,13) = zero
-            bpp(jp,15) = zero
-            bpp(jp,17) = zero
-            bpp(jp,19) = zero
-         endif
-         if(kstar(2).eq.15) then
-            bpp(jp,3) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,9) = zero
-            bpp(jp,12) = zero
-            bpp(jp,14) = zero
-            bpp(jp,16) = zero
-            bpp(jp,18) = zero
-            bpp(jp,20) = zero
-         endif
       endif
       epoch(1) = tphys - aj(1)
       epoch(2) = tphys - aj(2)
@@ -2652,26 +2372,16 @@
             bpp(jp,1) = tphys
             bpp(jp,2) = mass(1)
 *            if(kstar(1).eq.15) bpp(jp,2) = mass0(1)
-*            if(kstar(1).eq.15) bpp(jp,2) = zero
+            if(kstar(1).eq.15) bpp(jp,2) = zero
             bpp(jp,3) = mass(2)
 *            if(kstar(2).eq.15) bpp(jp,3) = mass0(2)
-*            if(kstar(2).eq.15) bpp(jp,3) = zero
+            if(kstar(2).eq.15) bpp(jp,3) = zero
             bpp(jp,4) = float(kstar(1))
             bpp(jp,5) = float(kstar(2))
-            bpp(jp,6) = sep
-            bpp(jp,7) = ecc
-            bpp(jp,8) = rad(1)/rol(1)
-            bpp(jp,9) = rad(2)/rol(2)
-            bpp(jp,11) = lumin(1)
-            bpp(jp,12) = lumin(2)
-            bpp(jp,13) = rad(1)
-            bpp(jp,14) = rad(2)
-            bpp(jp,15) = massc(1)
-            bpp(jp,16) = massc(2)
-            bpp(jp,17) = radc(1)
-            bpp(jp,18) = radc(2)
-            bpp(jp,19) = ospin(1)
-            bpp(jp,20) = ospin(2)
+            bpp(jp,6) = zero
+            bpp(jp,7) = zero
+            bpp(jp,8) = zero
+            bpp(jp,9) = ngtv
             if(coel)then
 *               bpp(jp,10) = 6.0
                bpp(jp,10) = 10.0
@@ -2680,9 +2390,9 @@
 *
 * Binary dissolved by a supernova or tides.
 *
-*               bpp(jp,6) = sep
-*               bpp(jp,7) = ecc
-*               bpp(jp,9) = ngtv2
+               bpp(jp,6) = sep
+               bpp(jp,7) = ecc
+               bpp(jp,9) = ngtv2
 *               bpp(jp,10) = 11.0
                bpp(jp,10) = 13.0
 *               btype = 13
@@ -2694,28 +2404,6 @@
                bpp(jp,10) = 12.0
             endif
          endif
-         if(kstar(1).eq.15) then
-            bpp(jp,2) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,8) = zero
-            bpp(jp,11) = zero
-            bpp(jp,13) = zero
-            bpp(jp,15) = zero
-            bpp(jp,17) = zero
-            bpp(jp,19) = zero
-         endif
-         if(kstar(2).eq.15) then
-            bpp(jp,3) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,9) = zero
-            bpp(jp,12) = zero
-            bpp(jp,14) = zero
-            bpp(jp,16) = zero
-            bpp(jp,18) = zero
-            bpp(jp,20) = zero
-         endif
          if(kstar(2).eq.15)then
             kmax = 1
             rol(2) = -1.d0*rad(2)
@@ -2726,7 +2414,6 @@
             dtmi(1) = tphysf
          endif
          ecc = -1.d0
-         tb = 0.d0
          sep = 0.d0
          dtm = 0.d0
          coel = .false.
@@ -2741,34 +2428,18 @@
          jp = MIN(jpmax,jp + 1)
          bpp(jp,1) = tphys
          bpp(jp,2) = mass(1)
+         if(kstar(1).eq.15.and.bpp(jp-1,4).lt.15.0)then
+            bpp(jp,2) = zero
+         endif
          bpp(jp,3) = mass(2)
+         if(kstar(2).eq.15.and.bpp(jp-1,5).lt.15.0)then
+            bpp(jp,3) = zero
+         endif
          bpp(jp,4) = float(kstar(1))
          bpp(jp,5) = float(kstar(2))
-         bpp(jp,6) = sep
-         bpp(jp,7) = ecc
-         bpp(jp,8) = rad(1)/rol(1)
-         bpp(jp,9) = rad(2)/rol(2)
-         bpp(jp,11) = lumin(1)
-         bpp(jp,12) = lumin(2)
-         bpp(jp,13) = rad(1)
-         bpp(jp,14) = rad(2)
-         bpp(jp,15) = massc(1)
-         bpp(jp,16) = massc(2)
-         bpp(jp,17) = radc(1)
-         bpp(jp,18) = radc(2)
-         bpp(jp,19) = ospin(1)
-         bpp(jp,20) = ospin(2)
-*         if(kstar(1).eq.15.and.bpp(jp-1,4).lt.15.0)then
-*            bpp(jp,2) = zero
-*         endif
-*         if(kstar(2).eq.15.and.bpp(jp-1,5).lt.15.0)then
-*            bpp(jp,3) = zero
-*         endif
-*         bpp(jp,4) = float(kstar(1))
-*         bpp(jp,5) = float(kstar(2))
-*         bpp(jp,6) = zero
-*         bpp(jp,7) = zero
-*         bpp(jp,8) = zero
+         bpp(jp,6) = zero
+         bpp(jp,7) = zero
+         bpp(jp,8) = zero
          if(coel)then
             bpp(jp,9) = ngtv
 *            bpp(jp,10) = 6.0
@@ -2784,43 +2455,20 @@
             bpp(jp,3) = zero
             bpp(jp,4) = float(kstar(1))
             bpp(jp,5) = float(kstar(2))
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = zero
+            bpp(jp,6) = zero
+            bpp(jp,7) = zero
             bpp(jp,8) = zero
             bpp(jp,9) = ngtv2
-*            bpp(jp,10) = 9.0
-            bpp(jp,10) = 12.0
-*            btype = 12
+*            bpp(jp,10) = 11.0
+            bpp(jp,10) = 13.0
+*            btype = 13
          else
-*            bpp(jp,6) = sep
-*            bpp(jp,7) = ecc
-*            bpp(jp,8) = rad(1)/rol(1)
-*            bpp(jp,9) = rad(2)/rol(2)
+            bpp(jp,6) = sep
+            bpp(jp,7) = ecc
+            bpp(jp,8) = rad(1)/rol(1)
+            bpp(jp,9) = rad(2)/rol(2)
             bpp(jp,10) = -1.0
          endif
-         if(kstar(1).eq.15)then
-            bpp(jp,2) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,8) = zero
-            bpp(jp,11) = zero
-            bpp(jp,13) = zero
-            bpp(jp,15) = zero
-            bpp(jp,17) = zero
-            bpp(jp,19) = zero
-         endif
-         if(kstar(2).eq.15)then
-            bpp(jp,3) = zero
-*            bpp(jp,6) = zero
-*            bpp(jp,7) = ngtv
-            bpp(jp,9) = zero
-            bpp(jp,12) = zero
-            bpp(jp,14) = zero
-            bpp(jp,16) = zero
-            bpp(jp,18) = zero
-            bpp(jp,20) = zero
-         endif
-
       endif
 *
       if(tphys.ge.tprint) then
@@ -2943,68 +2591,4 @@
 *
       RETURN
       END
-***
-      logical function blueornot(newradornot,kw,lum,rad,mass)
-      use iso_c_binding
-      implicit none
-      include 'cppinterface.h'
-      logical newradornot
-      integer kw
-      real*8 lum,rad,mass
-
-      blueornot = .false.
-      if(newradornot)then
-         blueornot = askRadiativeOrNot3(kw,lum,rad,mass)
-      else
-         if(kw.eq.4)then
-            blueornot = .true.
-         else
-            blueornot = .false.
-         endif
-      endif
-
-      return
-      end function
-***
-      real*8 function dyntide(newdyntide,kw,m0,mt,rad)
-      use iso_c_binding
-      implicit none
-      include 'cppinterface.h'
-      logical newdyntide
-      integer kw
-      real*8 m0,mt,rad,rconv
-      real*8 mhecrit
-      parameter(mhecrit=2.)
-
-      dyntide = 1.592d-09*(mt**2.84d0)
-      if(newdyntide)then
-         if(askInScopeOfApplication(m0) .and. kw.lt.7)then
-            rconv   = getConvectiveCoreRadiusOfBluePhase(mt)
-            dyntide = 10**(-0.42)*(rconv/rad)**7.5
-         else if(kw.eq.7 .and. mt.ge.mhecrit)then
-            dyntide = 10**(-0.93)*(0.5/rad)**6.7
-         endif
-      endif
-
-      return
-      end function
-***
-      logical function coreenvornot(nohgce,kwx)
-      implicit none
-      logical nohgce
-      integer kwx
-
-      coreenvornot = .false.
-      if(nohgce)then
-         if(kwx.ge.3.and.kwx.le.9.and.kwx.ne.7)then
-            coreenvornot = .true.
-         endif
-      else
-         if(kwx.ge.2.and.kwx.le.9.and.kwx.ne.7)then
-            coreenvornot = .true.
-         endif
-      endif
-
-      return
-      end function
 ***
