@@ -126,7 +126,7 @@ If users want to use external potential, the _Galpy_ interface is available. Use
 ```
 pip3 install galpy
 ```
-Or download the source code from https://github.com/jobovy/galpy.
+Or download the source code from https://github.com/jobovy/galpy. It is recommended to download and install from the source code, preferably using version 1.7.0.
 
 If the source codes of these libraries are put in the same directory where the _PeTar_ directory exist, the configure script (see Section [make](#make)) can detect them automatically. Otherwise users need to provide the pathes of them by adding configure options
 ```
