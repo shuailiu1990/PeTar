@@ -10,7 +10,7 @@ galpy_dir="$opt_dir/galpy/galpy"
 rm -rf "$petar_dir"
 mkdir -p "$petar_dir"
 
-make clean
+make clean || true
 
 # For Pop3 cluster
 ./configure \
